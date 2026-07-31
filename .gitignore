@@ -47,3 +47,6 @@ desktop.ini
 # Temporary files
 *.tmp
 *.temp
+
+# anchor.md context folder
+anchor.md/

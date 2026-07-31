@@ -45,6 +45,10 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [analysis, setAnalysis] = useState(null);
+    
+    // --- STEP 2: Add the new state ---
+    const [hallucinationAnalysis, setHallucinationAnalysis] = useState(null);
+    
     const [historyOpen, setHistoryOpen] = useState(false);
     const [resultsOpen, setResultsOpen] = useState(false);
     const [historyItems, setHistoryItems] = useState([]);
@@ -122,6 +126,10 @@ function App() {
         setSummary("");
         setDisplayedSummary("");
         setAnalysis(null);
+        
+        // --- STEP 2: Clear the state ---
+        setHallucinationAnalysis(null);
+        
         setError("");
         setCopied(false);
         setResultsOpen(false);
@@ -299,6 +307,10 @@ function App() {
             setOverview(data.overview || "");
             setSummary(data.summary || "");
             setAnalysis(data.analysis || null);
+            
+            // --- STEP 2: Save the state from the backend response ---
+            setHallucinationAnalysis(data.hallucination_analysis || null);
+            
             setResultsOpen(true);
             persistHistory({
                 sourceText: uploadedFile ? `${uploadedFile.name} upload` : text,
@@ -366,6 +378,10 @@ function App() {
                 setResultsOpen={setResultsOpen}
                 loading={loading}
                 analysis={analysis}
+                
+                // --- STEP 2: Pass the prop down to the window ---
+                hallucinationAnalysis={hallucinationAnalysis}
+                
                 confidence={confidence}
                 aiSignal={aiSignal}
                 overview={overview}
@@ -726,18 +742,22 @@ function ResultsWindow(props) {
         setResultsOpen,
         loading,
         analysis,
+        hallucinationAnalysis, // <-- New Prop
         confidence,
-        aiSignal,
         overview,
         displayedSummary,
         summary,
         outputSentences,
-        keyTerms,
         copied,
         handleCopy,
         handleDownloadPdf,
         uploadedFile,
     } = props;
+
+    // Calculate the overall risk percentage safely
+    const riskPercentage = hallucinationAnalysis 
+        ? (hallucinationAnalysis.overall_risk_score * 100).toFixed(1) 
+        : 0;
 
     return (
         <AnimatePresence>
@@ -782,7 +802,8 @@ function ResultsWindow(props) {
 
                             <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                 <MetricCard label="Confidence" value={`${confidence}%`} />
-                                <MetricCard label="AI Signal" value={`${aiSignal}%`} />
+                                {/* Replaced AI Signal with Factual Risk */}
+                                <MetricCard label="Hallucination Risk" value={`${riskPercentage}%`} />
                                 <MetricCard label="Summary Words" value={`${analysis?.summary_word_count ?? 0}`} />
                                 <MetricCard label="Reading Time" value={`${analysis?.summary_reading_time_minutes ?? 0} min`} />
                             </div>
@@ -804,7 +825,7 @@ function ResultsWindow(props) {
                                                 title="Source Stats"
                                                 body={
                                                     analysis
-                                                        ? `${analysis.input_word_count} words, ${analysis.input_sentence_count} sentences, ${analysis.input_character_count} characters`
+                                                        ? `${analysis.input_word_count} words, ${analysis.input_sentence_count} sentences`
                                                         : "No analytics yet."
                                                 }
                                             />
@@ -815,8 +836,8 @@ function ResultsWindow(props) {
                                             />
                                             <InsightCard
                                                 icon={<WandSparkles size={16} />}
-                                                title="AI Writing Risk"
-                                                body={analysis?.ai_writing_signals?.details || "Heuristic guidance appears here after processing."}
+                                                title="Verification Status"
+                                                body={hallucinationAnalysis?.overall_hallucinated ? "⚠️ Potential hallucinations detected. Review highlighted text." : "✅ All claims entail the source text."}
                                             />
                                             <InsightCard
                                                 icon={<Sparkles size={16} />}
@@ -830,12 +851,12 @@ function ResultsWindow(props) {
                                 <div className="min-h-0 overflow-hidden rounded-md border border-hairline bg-canvas p-4 sm:p-5">
                                     <div className="mb-4 flex items-center justify-between gap-4">
                                         <div className="text-body-sm text-mute">
-                                            {analysis ? `${analysis.summary_word_count} words in summary` : "Ready for generation"}
+                                            {analysis ? "Explainable XAI Breakdown" : "Ready for generation"}
                                         </div>
                                         {copied && <div className="text-xs text-link">Copied to clipboard</div>}
                                     </div>
 
-                                    <div className="scrollbar-thin h-[calc(100%-32px)] min-h-[280px] overflow-y-auto pr-2">
+                                    <div className="scrollbar-thin h-[calc(100%-32px)] min-h-[280px] overflow-y-auto pr-2 pb-8">
                                         {loading ? (
                                             <div className="flex h-full flex-col items-center justify-center gap-4">
                                                 <motion.span
@@ -845,29 +866,40 @@ function ResultsWindow(props) {
                                                 >
                                                     <Sparkles size={20} />
                                                 </motion.span>
-                                                <p className="text-body-sm text-mute">Generating interactive summary view...</p>
+                                                <p className="text-body-sm text-mute">Verifying facts against source...</p>
                                             </div>
-                                        ) : displayedSummary ? (
-                                            <div className="space-y-3">
-                                                {outputSentences.map((sentence, index) => {
-                                                    const isKeySentence = Array.from(keyTerms).some((term) =>
-                                                        sentence.toLowerCase().includes(term.toLowerCase())
-                                                    );
+                                        ) : hallucinationAnalysis ? (
+                                            <div className="space-y-4 pt-2">
+                                                {hallucinationAnalysis.sentence_analysis.map((item, index) => {
+                                                    const isHallucinated = item.is_hallucinated;
+                                                    const styleClass = isHallucinated ? "sentence-hallucinated" : "sentence-factual";
+                                                    
                                                     return (
-                                                        <motion.p
-                                                            key={`${sentence}-${index}-window`}
-                                                            initial={{ opacity: 0, x: 8 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: index * 0.05 }}
-                                                            className={isKeySentence ? "sentence-key" : "sentence-default"}
+                                                        <motion.div
+                                                            key={`${index}-xai`}
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            transition={{ delay: index * 0.1 }}
+                                                            className={`${styleClass} group relative cursor-pointer`}
                                                         >
-                                                            {sentence}
-                                                        </motion.p>
+                                                            <div className="flex gap-2">
+                                                                <span className="mt-0.5">{isHallucinated ? "⚠️" : "✅"}</span>
+                                                                <p>{item.claim}</p>
+                                                            </div>
+                                                            
+                                                            {/* Explainable Tooltip on Hover */}
+                                                            <div className="absolute left-4 -top-8 hidden group-hover:flex items-center gap-3 rounded bg-ink px-3 py-1.5 text-xs text-canvas shadow-lg z-10 whitespace-nowrap">
+                                                                <span className="text-emerald-300 font-medium">
+                                                                    Entailment: {(item.scores.entailment * 100).toFixed(1)}%
+                                                                </span>
+                                                                <span className="text-slate-400">|</span>
+                                                                <span className="text-rose-300 font-medium">
+                                                                    Contradiction: {(item.scores.contradiction * 100).toFixed(1)}%
+                                                                </span>
+                                                            </div>
+                                                        </motion.div>
                                                     );
                                                 })}
-                                                {displayedSummary.length < summary.length && (
-                                                    <span className="ml-2 inline-block h-5 w-0.5 animate-blink bg-ink align-middle" />
-                                                )}
                                             </div>
                                         ) : (
                                             <p className="text-body-sm leading-6 text-mute">{DEFAULT_OUTPUT}</p>

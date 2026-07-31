@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from hallucination_detector import HallucinationDetector
 from flask import Flask, jsonify, render_template, request
 
 try:
@@ -33,6 +33,8 @@ app = Flask(
     static_folder=str(BASE_DIR / "static"),
 )
 
+print("Initializing Hallucination Detector (this might take a moment)...")
+hallucination_detector = HallucinationDetector()
 
 @app.get("/")
 def index():
@@ -107,6 +109,16 @@ def summarize():
     overview = generate_overview(summary or text)
     analysis = analyze_text(text, summary)
 
+    # --- NEW: HALLUCINATION DETECTION INTEGRATION ---
+    print("Running Hallucination Analysis...")
+    try:
+        # We pass the original source text and the newly generated summary
+        hallucination_analysis = hallucination_detector.analyze_summary(text, summary)
+    except Exception as e:
+        print(f"Error during hallucination detection: {e}")
+        hallucination_analysis = {"error": "Failed to analyze hallucination", "details": str(e)}
+    # ------------------------------------------------
+
     return jsonify(
         {
             "model_type": model_type,
@@ -114,6 +126,7 @@ def summarize():
             "summary": summary,
             "source_file": file_name,
             "analysis": analysis,
+            "hallucination_analysis": hallucination_analysis, # <-- Added to response
         }
     )
 
