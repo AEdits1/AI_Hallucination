@@ -1,7 +1,7 @@
 from pathlib import Path
 from hallucination_detector import HallucinationDetector
 from flask import Flask, jsonify, render_template, request
-
+import time
 try:
     from backend.analysis import analyze_text
     from backend.bart_model import BART_SUMMARIZER
@@ -110,13 +110,47 @@ def summarize():
     analysis = analyze_text(text, summary)
 
     # --- NEW: HALLUCINATION DETECTION INTEGRATION ---
+    # print("Running Hallucination Analysis...")
+    # try:
+    #     # We pass the original source text and the newly generated summary
+    #     hallucination_analysis = hallucination_detector.analyze_summary(text, summary)
+    # except Exception as e:
+    #     print(f"Error during hallucination detection: {e}")
+    #     hallucination_analysis = {"error": "Failed to analyze hallucination", "details": str(e)}
     print("Running Hallucination Analysis...")
+
+    hallucination_start = time.perf_counter()
+
     try:
-        # We pass the original source text and the newly generated summary
-        hallucination_analysis = hallucination_detector.analyze_summary(text, summary)
-    except Exception as e:
-        print(f"Error during hallucination detection: {e}")
-        hallucination_analysis = {"error": "Failed to analyze hallucination", "details": str(e)}
+        hallucination_analysis = (
+            hallucination_detector.analyze_summary(
+                text,
+                summary
+            )
+        )
+
+        hallucination_time = (
+            time.perf_counter()
+            - hallucination_start
+        )
+
+        hallucination_analysis[
+            "processing_time_seconds"
+        ] = round(
+            hallucination_time,
+            3
+        )
+
+    except Exception as error:
+
+        print(
+            f"Error during hallucination detection: {error}"
+        )
+
+        hallucination_analysis = {
+            "error": "Failed to analyze hallucination",
+            "details": str(error),
+        }
     # ------------------------------------------------
 
     return jsonify(
@@ -132,4 +166,4 @@ def summarize():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+     app.run(debug=True)
