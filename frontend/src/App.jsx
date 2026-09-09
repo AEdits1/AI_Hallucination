@@ -144,6 +144,7 @@ function App() {
             overview: payload.overview,
             summary: payload.summary,
             analysis: payload.analysis,
+            hallucinationAnalysis: payload.hallucinationAnalysis,
             sourceFile: payload.sourceFile,
             preset: payload.preset,
             model: payload.model,
@@ -275,6 +276,9 @@ function App() {
         setSummary(item.summary);
         setDisplayedSummary(item.summary);
         setAnalysis(item.analysis);
+        setHallucinationAnalysis(
+            item.hallucinationAnalysis || null
+        );
         setSummaryPreset(item.preset);
         setSummaryModel(item.model || "extractive");
         setUploadedFile(null);
@@ -313,13 +317,27 @@ function App() {
             
             setResultsOpen(true);
             persistHistory({
-                sourceText: uploadedFile ? `${uploadedFile.name} upload` : text,
+                sourceText: uploadedFile
+                    ? `${uploadedFile.name} upload`
+                    : text,
+            
                 overview: data.overview || "",
+            
                 summary: data.summary || "",
+            
                 analysis: data.analysis || null,
-                sourceFile: data.source_file || null,
-                preset: summaryPreset,
-                model: summaryModel,
+            
+                hallucinationAnalysis:
+                    data.hallucination_analysis || null,
+            
+                sourceFile:
+                    data.source_file || null,
+            
+                preset:
+                    summaryPreset,
+            
+                model:
+                    summaryModel,
             });
         } catch (requestError) {
             setError(requestError.message);
@@ -755,7 +773,7 @@ function ResultsWindow(props) {
     } = props;
 
     // Calculate the overall risk percentage safely
-    const riskPercentage = hallucinationAnalysis 
+    const hallucinationPercentage  = hallucinationAnalysis 
         ? (hallucinationAnalysis.overall_risk_score * 100).toFixed(1) 
         : 0;
 
@@ -801,11 +819,27 @@ function ResultsWindow(props) {
                             </div>
 
                             <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                <MetricCard label="Confidence" value={`${confidence}%`} />
-                                {/* Replaced AI Signal with Factual Risk */}
-                                <MetricCard label="Hallucination Risk" value={`${riskPercentage}%`} />
-                                <MetricCard label="Summary Words" value={`${analysis?.summary_word_count ?? 0}`} />
-                                <MetricCard label="Reading Time" value={`${analysis?.summary_reading_time_minutes ?? 0} min`} />
+
+                                <MetricCard
+                                    label="Summary Confidence"
+                                    value={`${confidence}%`}
+                                />
+
+                                <MetricCard
+                                    label="Hallucination Ratio"
+                                    value={`${hallucinationPercentage}%`}
+                                />
+
+                                <MetricCard
+                                    label="Supported Claims"
+                                    value={`${hallucinationAnalysis?.supported_claims ?? 0}`}
+                                />
+
+                                <MetricCard
+                                    label="Contradicted Claims"
+                                    value={`${hallucinationAnalysis?.contradicted_claims ?? 0}`}
+                                />
+
                             </div>
 
                             <div className="grid min-h-0 flex-1 gap-5 overflow-hidden lg:grid-cols-[0.9fr_1.1fr]">
@@ -837,7 +871,13 @@ function ResultsWindow(props) {
                                             <InsightCard
                                                 icon={<WandSparkles size={16} />}
                                                 title="Verification Status"
-                                                body={hallucinationAnalysis?.overall_hallucinated ? "⚠️ Potential hallucinations detected. Review highlighted text." : "✅ All claims entail the source text."}
+                                                body={
+                                                    hallucinationAnalysis?.overall_label === "HALLUCINATION_DETECTED"
+                                                        ? "⚠️ Contradictory claims detected. Review the evidence below."
+                                                        : hallucinationAnalysis?.overall_label === "POTENTIAL_HALLUCINATION"
+                                                            ? "⚠️ Some claims could not be reliably verified."
+                                                            : "✅ The generated summary is supported by the source."
+                                                }
                                             />
                                             <InsightCard
                                                 icon={<Sparkles size={16} />}
@@ -870,36 +910,164 @@ function ResultsWindow(props) {
                                             </div>
                                         ) : hallucinationAnalysis ? (
                                             <div className="space-y-4 pt-2">
-                                                {hallucinationAnalysis.sentence_analysis.map((item, index) => {
-                                                    const isHallucinated = item.is_hallucinated;
-                                                    const styleClass = isHallucinated ? "sentence-hallucinated" : "sentence-factual";
-                                                    
-                                                    return (
-                                                        <motion.div
-                                                            key={`${index}-xai`}
-                                                            initial={{ opacity: 0, y: 8 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            transition={{ delay: index * 0.1 }}
-                                                            className={`${styleClass} group relative cursor-pointer`}
-                                                        >
-                                                            <div className="flex gap-2">
-                                                                <span className="mt-0.5">{isHallucinated ? "⚠️" : "✅"}</span>
-                                                                <p>{item.claim}</p>
-                                                            </div>
-                                                            
-                                                            {/* Explainable Tooltip on Hover */}
-                                                            <div className="absolute left-4 -top-8 hidden group-hover:flex items-center gap-3 rounded bg-ink px-3 py-1.5 text-xs text-canvas shadow-lg z-10 whitespace-nowrap">
-                                                                <span className="text-emerald-300 font-medium">
-                                                                    Entailment: {(item.scores.entailment * 100).toFixed(1)}%
-                                                                </span>
-                                                                <span className="text-slate-400">|</span>
-                                                                <span className="text-rose-300 font-medium">
-                                                                    Contradiction: {(item.scores.contradiction * 100).toFixed(1)}%
-                                                                </span>
-                                                            </div>
-                                                        </motion.div>
-                                                    );
-                                                })}
+                                        
+                                                <div className="rounded-md border border-hairline bg-canvas-soft p-4">
+                                                    <p className="caption-mono mb-2 text-mute">
+                                                        Hallucination analysis
+                                                    </p>
+                                        
+                                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                        
+                                                        <MetricCard
+                                                            label="Claims"
+                                                            value={hallucinationAnalysis.total_claims ?? 0}
+                                                        />
+                                        
+                                                        <MetricCard
+                                                            label="Supported"
+                                                            value={hallucinationAnalysis.supported_claims ?? 0}
+                                                        />
+                                        
+                                                        <MetricCard
+                                                            label="Contradicted"
+                                                            value={hallucinationAnalysis.contradicted_claims ?? 0}
+                                                        />
+                                        
+                                                        <MetricCard
+                                                            label="Unverifiable"
+                                                            value={hallucinationAnalysis.unverifiable_claims ?? 0}
+                                                        />
+                                        
+                                                    </div>
+                                                </div>
+                                        
+                                                {hallucinationAnalysis.sentence_analysis?.map(
+                                                    (item, index) => {
+                                        
+                                                        const isSupported =
+                                                            item.label === "ENTAILMENT";
+                                        
+                                                        const isContradiction =
+                                                            item.label === "CONTRADICTION";
+                                        
+                                                        const isUnverifiable =
+                                                            item.label === "UNVERIFIABLE";
+                                        
+                                                        return (
+                                                            <motion.div
+                                                                key={`${index}-xai`}
+                                                                initial={{
+                                                                    opacity: 0,
+                                                                    y: 8,
+                                                                }}
+                                                                animate={{
+                                                                    opacity: 1,
+                                                                    y: 0,
+                                                                }}
+                                                                transition={{
+                                                                    delay: index * 0.08,
+                                                                }}
+                                                                className="rounded-md border border-hairline bg-canvas-soft p-4"
+                                                            >
+                                        
+                                                                <div className="flex items-start justify-between gap-3">
+                                        
+                                                                    <div className="flex min-w-0 gap-2">
+                                        
+                                                                        <span className="mt-0.5">
+                                                                            {isSupported
+                                                                                ? "✅"
+                                                                                : isContradiction
+                                                                                    ? "⚠️"
+                                                                                    : "❔"}
+                                                                        </span>
+                                        
+                                                                        <p className="text-body-sm leading-6 text-ink">
+                                                                            {item.claim}
+                                                                        </p>
+                                        
+                                                                    </div>
+                                        
+                                                                    <span className="shrink-0 rounded-full bg-canvas px-2.5 py-1 text-xs font-medium">
+                                                                        {item.label}
+                                                                    </span>
+                                        
+                                                                </div>
+                                        
+                                                                <div className="mt-3 grid grid-cols-3 gap-2">
+                                        
+                                                                    <div className="rounded bg-canvas p-2">
+                                                                        <p className="text-xs text-mute">
+                                                                            Entailment
+                                                                        </p>
+                                        
+                                                                        <p className="mt-1 text-sm font-medium">
+                                                                            {(
+                                                                                item.scores?.entailment * 100
+                                                                            ).toFixed(1)}%
+                                                                        </p>
+                                                                    </div>
+                                        
+                                                                    <div className="rounded bg-canvas p-2">
+                                                                        <p className="text-xs text-mute">
+                                                                            Contradiction
+                                                                        </p>
+                                        
+                                                                        <p className="mt-1 text-sm font-medium">
+                                                                            {(
+                                                                                item.scores?.contradiction * 100
+                                                                            ).toFixed(1)}%
+                                                                        </p>
+                                                                    </div>
+                                        
+                                                                    <div className="rounded bg-canvas p-2">
+                                                                        <p className="text-xs text-mute">
+                                                                            Unverifiable
+                                                                        </p>
+                                        
+                                                                        <p className="mt-1 text-sm font-medium">
+                                                                            {(
+                                                                                item.scores?.unverifiable * 100
+                                                                            ).toFixed(1)}%
+                                                                        </p>
+                                                                    </div>
+                                        
+                                                                </div>
+                                        
+                                                                {item.evidence && (
+                                                                    <div className="mt-3 rounded-md border border-hairline bg-canvas p-3">
+                                        
+                                                                        <p className="caption-mono mb-1 text-mute">
+                                                                            Source evidence
+                                                                        </p>
+                                        
+                                                                        <p className="text-body-sm leading-6 text-body">
+                                                                            {item.evidence}
+                                                                        </p>
+                                        
+                                                                        <p className="mt-2 text-xs text-mute">
+                                                                            Evidence similarity:
+                                                                            {" "}
+                                                                            {(
+                                                                                item.evidence_similarity * 100
+                                                                            ).toFixed(1)}%
+                                                                        </p>
+                                        
+                                                                    </div>
+                                                                )}
+                                        
+                                                                {isUnverifiable && (
+                                                                    <p className="mt-3 text-xs text-mute">
+                                                                        The source did not provide enough
+                                                                        evidence to verify this claim.
+                                                                    </p>
+                                                                )}
+                                        
+                                                            </motion.div>
+                                                        );
+                                                    }
+                                                )}
+                                        
                                             </div>
                                         ) : (
                                             <p className="text-body-sm leading-6 text-mute">{DEFAULT_OUTPUT}</p>
@@ -1046,6 +1214,242 @@ function InsightCard({ icon, title, body }) {
             </div>
             <h4 className="text-body-sm font-medium text-ink">{title}</h4>
             <p className="mt-1 text-xs leading-5 text-body">{body}</p>
+        </div>
+    );
+}
+// export default App;
+
+
+function HallucinationPanel({
+    hallucinationAnalysis,
+}) {
+    if (!hallucinationAnalysis) {
+        return null;
+    }
+
+    if (hallucinationAnalysis.error) {
+        return (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                <p className="font-medium text-red-700">
+                    Hallucination analysis failed
+                </p>
+
+                <p className="mt-1 text-sm text-red-600">
+                    {hallucinationAnalysis.details}
+                </p>
+            </div>
+        );
+    }
+
+    const {
+        overall_label,
+        overall_confidence,
+        total_claims,
+        supported_claims,
+        contradicted_claims,
+        unverifiable_claims,
+        hallucinated_claims,
+        hallucination_ratio,
+        sentence_analysis,
+    } = hallucinationAnalysis;
+
+    const percentage = Math.round(
+        overall_confidence * 100
+    );
+
+    return (
+        <div className="space-y-4">
+
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+
+                <div className="flex items-center justify-between">
+
+                    <div>
+                        <p className="text-sm text-gray-500">
+                            Hallucination Detection
+                        </p>
+
+                        <h3 className="mt-1 text-xl font-semibold">
+                            {overall_label}
+                        </h3>
+                    </div>
+
+                    <div className="text-right">
+
+                        <p className="text-2xl font-bold">
+                            {percentage}%
+                        </p>
+
+                        <p className="text-xs text-gray-500">
+                            prediction confidence
+                        </p>
+
+                    </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+                    <Metric
+                        label="Claims"
+                        value={total_claims}
+                    />
+
+                    <Metric
+                        label="Supported"
+                        value={supported_claims}
+                    />
+
+                    <Metric
+                        label="Contradicted"
+                        value={contradicted_claims}
+                    />
+
+                    <Metric
+                        label="Unverifiable"
+                        value={unverifiable_claims}
+                    />
+
+                </div>
+
+                <div className="mt-4 text-sm text-gray-600">
+                    Hallucinated claim ratio:
+                    {" "}
+                    {Math.round(
+                        hallucination_ratio * 100
+                    )}%
+                </div>
+
+            </div>
+
+            <div className="space-y-3">
+
+                {sentence_analysis?.map(
+                    (item, index) => (
+                        <ClaimCard
+                            key={index}
+                            item={item}
+                        />
+                    )
+                )}
+
+            </div>
+
+        </div>
+    );
+}
+
+
+function Metric({ label, value }) {
+    return (
+        <div className="rounded-lg bg-gray-50 p-3">
+            <p className="text-xs text-gray-500">
+                {label}
+            </p>
+
+            <p className="mt-1 text-lg font-semibold">
+                {value}
+            </p>
+        </div>
+    );
+}
+
+function ClaimCard({ item }) {
+
+    const isBad =
+        item.label === "CONTRADICTION";
+
+    const isUnknown =
+        item.label === "UNVERIFIABLE";
+
+    const status =
+        item.label === "ENTAILMENT"
+            ? "Supported"
+            : isBad
+                ? "Hallucination"
+                : "Not enough evidence";
+
+    return (
+        <div className="rounded-xl border border-gray-200 bg-white p-4">
+
+            <div className="flex items-start justify-between gap-4">
+
+                <div className="min-w-0">
+
+                    <p className="text-sm font-medium">
+                        {item.claim}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                        {status}
+                        {" · "}
+                        {Math.round(
+                            item.confidence * 100
+                        )}%
+                    </p>
+
+                </div>
+
+                <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium">
+                    {item.label}
+                </span>
+
+            </div>
+
+            {item.evidence && (
+                <div className="mt-3 rounded-lg bg-gray-50 p-3">
+
+                    <p className="text-xs font-medium text-gray-500">
+                        Source evidence
+                    </p>
+
+                    <p className="mt-1 text-sm text-gray-700">
+                        {item.evidence}
+                    </p>
+
+                    <p className="mt-2 text-xs text-gray-500">
+                        Evidence similarity:
+                        {" "}
+                        {Math.round(
+                            item.evidence_similarity * 100
+                        )}%
+                    </p>
+
+                </div>
+            )}
+
+            <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+
+                <Score
+                    label="Entailment"
+                    value={item.scores.entailment}
+                />
+
+                <Score
+                    label="Contradiction"
+                    value={item.scores.contradiction}
+                />
+
+                <Score
+                    label="Unverifiable"
+                    value={item.scores.unverifiable}
+                />
+
+            </div>
+
+        </div>
+    );
+}
+
+function Score({ label, value }) {
+    return (
+        <div className="rounded bg-gray-50 p-2">
+            <div className="text-gray-500">
+                {label}
+            </div>
+
+            <div className="font-medium">
+                {Math.round(value * 100)}%
+            </div>
         </div>
     );
 }
