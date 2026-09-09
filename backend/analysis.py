@@ -119,4 +119,3 @@ def analyze_text(source_text: str, summary_text: str) -> dict:
         "top_keywords": source_keywords,
         "ai_writing_signals": _ai_writing_signals(source_text),
     }
-
