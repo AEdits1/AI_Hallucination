@@ -1,5 +1,8 @@
 from pathlib import Path
-from hallucination_detector import HallucinationDetector
+try:
+    from backend.hallucination_detector import HallucinationDetector
+except ModuleNotFoundError:
+    from hallucination_detector import HallucinationDetector
 from flask import Flask, jsonify, render_template, request
 import time
 try:
@@ -109,16 +112,28 @@ def summarize():
     overview = generate_overview(summary or text)
     analysis = analyze_text(text, summary)
 
-    # --- NEW: HALLUCINATION DETECTION INTEGRATION ---
-    # print("Running Hallucination Analysis...")
-    # try:
-    #     # We pass the original source text and the newly generated summary
-    #     hallucination_analysis = hallucination_detector.analyze_summary(text, summary)
-    # except Exception as e:
-    #     print(f"Error during hallucination detection: {e}")
-    #     hallucination_analysis = {"error": "Failed to analyze hallucination", "details": str(e)}
-    print("Running Hallucination Analysis...")
+    return jsonify(
+        {
+            "model_type": model_type,
+            "overview": overview,
+            "summary": summary,
+            "source_file": file_name,
+            "source_text": text,
+            "analysis": analysis,
+            "hallucination_analysis": None,
+        }
+    )
 
+@app.post("/analyze_hallucination")
+def analyze_hallucination():
+    payload = request.get_json(silent=True) or {}
+    text = (payload.get("text") or "").strip()
+    summary = (payload.get("summary") or "").strip()
+
+    if not text or not summary:
+        return jsonify({"error": "Missing text or summary"}), 400
+
+    print("Running Hallucination Analysis...")
     hallucination_start = time.perf_counter()
 
     try:
@@ -128,41 +143,26 @@ def summarize():
                 summary
             )
         )
-
         hallucination_time = (
             time.perf_counter()
             - hallucination_start
         )
-
         hallucination_analysis[
             "processing_time_seconds"
         ] = round(
             hallucination_time,
             3
         )
-
     except Exception as error:
-
         print(
             f"Error during hallucination detection: {error}"
         )
-
         hallucination_analysis = {
             "error": "Failed to analyze hallucination",
             "details": str(error),
         }
-    # ------------------------------------------------
 
-    return jsonify(
-        {
-            "model_type": model_type,
-            "overview": overview,
-            "summary": summary,
-            "source_file": file_name,
-            "analysis": analysis,
-            "hallucination_analysis": hallucination_analysis, # <-- Added to response
-        }
-    )
+    return jsonify(hallucination_analysis)
 
 
 if __name__ == "__main__":

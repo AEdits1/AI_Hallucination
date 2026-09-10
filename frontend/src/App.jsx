@@ -48,6 +48,7 @@ function App() {
     
     // --- STEP 2: Add the new state ---
     const [hallucinationAnalysis, setHallucinationAnalysis] = useState(null);
+    const [hallucinationLoading, setHallucinationLoading] = useState(false);
     
     const [historyOpen, setHistoryOpen] = useState(false);
     const [resultsOpen, setResultsOpen] = useState(false);
@@ -129,6 +130,7 @@ function App() {
         
         // --- STEP 2: Clear the state ---
         setHallucinationAnalysis(null);
+        setHallucinationLoading(false);
         
         setError("");
         setCopied(false);
@@ -308,37 +310,49 @@ function App() {
             if (!response.ok) {
                 throw new Error(data.error || "Unable to summarize this content.");
             }
+            
+            const rawSourceText = data.analysis?.input_character_count ? text : ""; 
+            const generatedSummary = data.summary || "";
+            
             setOverview(data.overview || "");
-            setSummary(data.summary || "");
+            setSummary(generatedSummary);
             setAnalysis(data.analysis || null);
-            
-            // --- STEP 2: Save the state from the backend response ---
-            setHallucinationAnalysis(data.hallucination_analysis || null);
-            
+            setHallucinationAnalysis(null);
+            setHallucinationLoading(true);
             setResultsOpen(true);
+            
             persistHistory({
-                sourceText: uploadedFile
-                    ? `${uploadedFile.name} upload`
-                    : text,
-            
+                sourceText: uploadedFile ? `${uploadedFile.name} upload` : text,
                 overview: data.overview || "",
-            
-                summary: data.summary || "",
-            
+                summary: generatedSummary,
                 analysis: data.analysis || null,
-            
-                hallucinationAnalysis:
-                    data.hallucination_analysis || null,
-            
-                sourceFile:
-                    data.source_file || null,
-            
-                preset:
-                    summaryPreset,
-            
-                model:
-                    summaryModel,
+                hallucinationAnalysis: null,
+                sourceFile: data.source_file || null,
+                preset: summaryPreset,
+                model: summaryModel,
             });
+            
+            // Decoupled API call for hallucination detection
+            fetch("/analyze_hallucination", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: data.source_text || text,
+                    summary: generatedSummary,
+                })
+            })
+            .then(res => res.json())
+            .then(hallucinationData => {
+                setHallucinationAnalysis(hallucinationData);
+            })
+            .catch(err => {
+                console.error("Hallucination analysis failed:", err);
+                setHallucinationAnalysis({ error: "Failed to analyze" });
+            })
+            .finally(() => {
+                setHallucinationLoading(false);
+            });
+            
         } catch (requestError) {
             setError(requestError.message);
         } finally {
@@ -399,6 +413,7 @@ function App() {
                 
                 // --- STEP 2: Pass the prop down to the window ---
                 hallucinationAnalysis={hallucinationAnalysis}
+                hallucinationLoading={hallucinationLoading}
                 
                 confidence={confidence}
                 aiSignal={aiSignal}
@@ -438,30 +453,13 @@ function TopNav({ setHistoryOpen, mobileNavOpen, setMobileNavOpen }) {
                         <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-ink">
                             <Sparkles size={14} className="text-on-primary" />
                         </div>
-                        <span className="text-body-sm font-medium text-ink">Summarize</span>
-                    </div>
-                    <div className="hidden items-center gap-1 md:flex">
-                        <button type="button" className="btn-ghost">
-                            Features
-                        </button>
-                        <button type="button" onClick={() => setHistoryOpen(true)} className="btn-ghost">
-                            History
-                        </button>
-                        <button type="button" className="btn-ghost">
-                            Docs
-                        </button>
+                        <span className="text-body-sm font-medium text-ink">Summarizer & Verifier</span>
                     </div>
                 </div>
 
                 <div className="hidden items-center gap-2 sm:flex">
-                    <button type="button" className="btn-outline">
-                        Ask AI
-                    </button>
                     <button type="button" onClick={() => setHistoryOpen(true)} className="btn-secondary-sm">
                         History
-                    </button>
-                    <button type="button" onClick={() => setHistoryOpen(true)} className="btn-primary-sm">
-                        Open App
                     </button>
                 </div>
 
@@ -484,9 +482,6 @@ function TopNav({ setHistoryOpen, mobileNavOpen, setMobileNavOpen }) {
                         className="absolute left-0 right-0 top-16 overflow-hidden border-b border-hairline bg-canvas sm:hidden"
                     >
                         <div className="flex flex-col gap-1 px-4 py-4">
-                            <button type="button" className="btn-ghost justify-start">
-                                Features
-                            </button>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -497,17 +492,6 @@ function TopNav({ setHistoryOpen, mobileNavOpen, setMobileNavOpen }) {
                             >
                                 History
                             </button>
-                            <button type="button" className="btn-ghost justify-start">
-                                Docs
-                            </button>
-                            <div className="mt-2 flex gap-2">
-                                <button type="button" className="btn-outline flex-1">
-                                    Ask AI
-                                </button>
-                                <button type="button" className="btn-primary-sm flex-1">
-                                    Open App
-                                </button>
-                            </div>
                         </div>
                     </motion.div>
                 )}
@@ -526,26 +510,16 @@ function HeroBand({ onSummarize, loading }) {
 
             <div className="relative z-10 mx-auto max-w-page px-4 py-16 sm:px-6 sm:py-24 lg:px-8 lg:py-32">
                 <div className="mx-auto max-w-3xl text-center">
-                    <div className="mb-6 flex justify-center">
-                        <span className="banner-marketing">
-                            <span className="caption-mono mr-2 text-mute">New</span>
-                            PEGASUS model now available
-                        </span>
-                    </div>
                     <h1 className="text-display-xl text-ink sm:text-[48px]">
-                        Summarize any text in seconds.
+                        Summarize any text.<br/> Verify the facts.
                     </h1>
                     <p className="mx-auto mt-6 max-w-xl text-body-lg text-body">
-                        Paste, upload, or speak your content. Get concise summaries with keyword highlights,
-                        confidence scores, and AI-writing analysis.
+                        Paste, upload, or speak your content. Get concise summaries equipped with deep Natural Language Inference to detect hallucinated claims.
                     </p>
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                         <button type="button" onClick={onSummarize} disabled={loading} className="btn-primary">
                             <Sparkles size={16} />
                             {loading ? "Summarizing..." : "Start Summarizing"}
-                        </button>
-                        <button type="button" className="btn-secondary">
-                            View Documentation
                         </button>
                     </div>
                 </div>
@@ -592,8 +566,14 @@ function InputPanel(props) {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <span className="badge-secondary">{inputWordCount} words</span>
-                    <span className="badge-secondary">{inputCharacterCount} chars</span>
+                    {uploadedFile ? (
+                        <span className="badge-secondary">File attached</span>
+                    ) : (
+                        <>
+                            <span className="badge-secondary">{inputWordCount} words</span>
+                            <span className="badge-secondary">{inputCharacterCount} chars</span>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -629,7 +609,7 @@ function InputPanel(props) {
                     </div>
                     <label className="btn-outline cursor-pointer">
                         Choose File
-                        <input type="file" className="hidden" onChange={(event) => handleUpload(event.target.files?.[0] ?? null)} />
+                        <input type="file" accept=".txt,.md,.csv,.json,.xml,.html,.htm,.log,.py,.js,.ts,.css,.java,.c,.cpp,.rb,.go,.php,.sql,.yaml,.yml,.ini,.rtf,.pdf,.docx,.pptx" className="hidden" onChange={(event) => handleUpload(event.target.files?.[0] ?? null)} />
                     </label>
                 </div>
                 <p className="mt-3 text-xs text-mute">
@@ -761,6 +741,7 @@ function ResultsWindow(props) {
         loading,
         analysis,
         hallucinationAnalysis, // <-- New Prop
+        hallucinationLoading,  // <-- New Prop
         confidence,
         overview,
         displayedSummary,
@@ -773,9 +754,10 @@ function ResultsWindow(props) {
     } = props;
 
     // Calculate the overall risk percentage safely
-    const hallucinationPercentage  = hallucinationAnalysis 
-        ? (hallucinationAnalysis.overall_risk_score * 100).toFixed(1) 
-        : 0;
+    const hasHallucinationError = hallucinationAnalysis && hallucinationAnalysis.error;
+    const hallucinationPercentage  = hallucinationLoading ? "..." : (hasHallucinationError ? "Err" : (hallucinationAnalysis 
+        ? (hallucinationAnalysis.hallucination_ratio * 100).toFixed(1)
+        : "0.0"));
 
     return (
         <AnimatePresence>
@@ -800,7 +782,7 @@ function ResultsWindow(props) {
                             <div className="mb-5 flex items-start justify-between gap-4">
                                 <div>
                                     <p className="caption-mono mb-2">Interactive Results</p>
-                                    <h3 className="text-display-md text-ink">Summary window.</h3>
+                                    <h3 className="text-display-md text-ink">Verified Summary.</h3>
                                     <p className="mt-1 text-body-sm text-mute">
                                         {uploadedFile?.name || "Manual text input"}
                                     </p>
@@ -827,17 +809,17 @@ function ResultsWindow(props) {
 
                                 <MetricCard
                                     label="Hallucination Ratio"
-                                    value={`${hallucinationPercentage}%`}
+                                    value={hallucinationLoading ? "Loading..." : `${hallucinationPercentage}%`}
                                 />
 
                                 <MetricCard
                                     label="Supported Claims"
-                                    value={`${hallucinationAnalysis?.supported_claims ?? 0}`}
+                                    value={hallucinationLoading ? "Loading..." : `${hallucinationAnalysis?.supported_claims ?? 0}`}
                                 />
 
                                 <MetricCard
                                     label="Contradicted Claims"
-                                    value={`${hallucinationAnalysis?.contradicted_claims ?? 0}`}
+                                    value={hallucinationLoading ? "Loading..." : `${hallucinationAnalysis?.contradicted_claims ?? 0}`}
                                 />
 
                             </div>
@@ -872,11 +854,15 @@ function ResultsWindow(props) {
                                                 icon={<WandSparkles size={16} />}
                                                 title="Verification Status"
                                                 body={
-                                                    hallucinationAnalysis?.overall_label === "HALLUCINATION_DETECTED"
-                                                        ? "⚠️ Contradictory claims detected. Review the evidence below."
-                                                        : hallucinationAnalysis?.overall_label === "POTENTIAL_HALLUCINATION"
-                                                            ? "⚠️ Some claims could not be reliably verified."
-                                                            : "✅ The generated summary is supported by the source."
+                                                    hallucinationLoading
+                                                        ? "Analyzing claims..."
+                                                        : hasHallucinationError
+                                                            ? "❌ Failed to analyze hallucinations."
+                                                            : hallucinationAnalysis?.overall_label === "HALLUCINATION_DETECTED"
+                                                                ? "⚠️ Contradictory claims detected. Review the evidence below."
+                                                                : hallucinationAnalysis?.overall_label === "POTENTIAL_HALLUCINATION"
+                                                                    ? "⚠️ Some claims could not be reliably verified."
+                                                                    : "✅ The generated summary is supported by the source."
                                                 }
                                             />
                                             <InsightCard
@@ -897,7 +883,7 @@ function ResultsWindow(props) {
                                     </div>
 
                                     <div className="scrollbar-thin h-[calc(100%-32px)] min-h-[280px] overflow-y-auto pr-2 pb-8">
-                                        {loading ? (
+                                        {loading || hallucinationLoading ? (
                                             <div className="flex h-full flex-col items-center justify-center gap-4">
                                                 <motion.span
                                                     animate={{ rotate: 360 }}
@@ -906,7 +892,9 @@ function ResultsWindow(props) {
                                                 >
                                                     <Sparkles size={20} />
                                                 </motion.span>
-                                                <p className="text-body-sm text-mute">Verifying facts against source...</p>
+                                                <p className="text-body-sm text-mute">
+                                                    {hallucinationLoading ? "Verifying facts against source..." : "Generating summary..."}
+                                                </p>
                                             </div>
                                         ) : hallucinationAnalysis ? (
                                             <div className="space-y-4 pt-2">
@@ -1145,50 +1133,15 @@ function HistoryDrawer({ historyOpen, setHistoryOpen, historyItems, loadHistoryI
 }
 
 function Footer() {
-    const columns = [
-        {
-            title: "Product",
-            links: ["Summarize", "Analytics", "History", "API"],
-        },
-        {
-            title: "Models",
-            links: ["Extractive AI", "PEGASUS", "Benchmarks", "Training"],
-        },
-        {
-            title: "Resources",
-            links: ["Documentation", "Guides", "Support", "Changelog"],
-        },
-        {
-            title: "Company",
-            links: ["About", "Blog", "Privacy", "Terms"],
-        },
-    ];
-
     return (
-        <footer className="border-t border-hairline bg-canvas px-4 py-16 sm:px-6 lg:px-8">
+        <footer className="border-t border-hairline bg-canvas px-4 py-8 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-page">
-                <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-                    {columns.map((column) => (
-                        <div key={column.title}>
-                            <p className="caption-mono mb-4 text-mute">{column.title}</p>
-                            <ul className="space-y-2">
-                                {column.links.map((link) => (
-                                    <li key={link}>
-                                        <button type="button" className="text-body-sm text-body transition hover:text-ink">
-                                            {link}
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
-                <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-8">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-ink">
                             <Sparkles size={12} className="text-on-primary" />
                         </div>
-                        <span className="text-body-sm text-mute">Text Summarization</span>
+                        <span className="text-body-sm text-mute">Summarizer & Verifier</span>
                     </div>
                     <p className="text-xs text-mute">© 2026 Text Summarization. All rights reserved.</p>
                 </div>

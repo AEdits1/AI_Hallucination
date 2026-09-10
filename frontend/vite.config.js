@@ -4,6 +4,14 @@ import path from "path";
 
 export default defineConfig({
     plugins: [react()],
+    server: {
+        proxy: {
+            "/summarize": {
+                target: "http://127.0.0.1:5000",
+                changeOrigin: true,
+            },
+        },
+    },
     build: {
         outDir: path.resolve(__dirname, "../static/dist"),
         emptyOutDir: true,

@@ -8,3 +8,4 @@ sentence-transformers
 sentencepiece==0.2.2
 torch==2.13.0
 transformers==5.14.1
+protobuf

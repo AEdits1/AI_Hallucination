@@ -222,11 +222,12 @@ class HallucinationDetector:
             for key, value in inputs.items()
         }
 
-        with torch.no_grad():
-
-            outputs = self.nli_model(
-                **inputs
-            )
+        with torch.inference_mode():
+            device_type = "cuda" if "cuda" in self.device else "cpu"
+            with torch.autocast(device_type=device_type):
+                outputs = self.nli_model(
+                    **inputs
+                )
 
             probabilities = torch.softmax(
                 outputs.logits,

@@ -9,6 +9,8 @@ A full-stack web application that summarizes long text using extractive or abstr
 - Adjustable summary length (short / medium / long)
 - Post-summary analytics: keywords, compression, reading time, content accuracy score
 - Heuristic AI-writing signal estimate
+- **Hallucination Detection:** Deep NLI verification against source documents using DeBERTa
+- **Optimized Inference:** Uses `torch.inference_mode()` and mixed precision `autocast` for fast GPU acceleration
 - Voice input via browser speech recognition
 - Summary history (browser localStorage)
 - Copy to clipboard and PDF export
@@ -159,9 +161,46 @@ Accepts **JSON** or **multipart form-data**.
     "ai_writing_signals": {
       "score": 48,
       "label": "Mixed signals",
-      "details": "Heuristic estimate based on sentence uniformity, repetition, transitions, and structure. This is not a definitive AI detector."
+      "details": "Heuristic estimate based on sentence uniformity, repetition, transitions, and structure."
     }
-  }
+  },
+  "hallucination_analysis": null
+}
+```
+
+### `POST /analyze_hallucination`
+
+Takes the source text and generated summary to perform a deep NLI (Natural Language Inference) check, detecting hallucinated or ungrounded claims.
+
+**JSON body:**
+```json
+{
+  "text": "The full original text...",
+  "summary": "The generated summary..."
+}
+```
+
+**Response:**
+```json
+{
+  "overall_label": "POTENTIAL_HALLUCINATION",
+  "overall_hallucinated": true,
+  "overall_confidence": 0.94,
+  "total_claims": 3,
+  "supported_claims": 2,
+  "contradicted_claims": 1,
+  "unverifiable_claims": 0,
+  "hallucination_ratio": 0.33,
+  "processing_time_seconds": 1.45,
+  "sentence_analysis": [
+    {
+      "claim": "The summary claim",
+      "label": "CONTRADICTION",
+      "is_hallucinated": true,
+      "confidence": 0.91,
+      "evidence": "The retrieved sentence from the source."
+    }
+  ]
 }
 ```
 

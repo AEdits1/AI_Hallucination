@@ -58,15 +58,18 @@ class BartSummarizer:
             self._model = self._model.to("cuda")
             inputs = {key: value.to("cuda") for key, value in inputs.items()}
 
-        summary_ids = self._model.generate(
-            **inputs,
-            num_beams=4,
-            min_length=min_length,
-            max_length=max_length,
-            length_penalty=2.0,
-            early_stopping=True,
-            no_repeat_ngram_size=3,
-        )
+        with torch.inference_mode():
+            device_type = "cuda" if torch is not None and torch.cuda.is_available() else "cpu"
+            with torch.autocast(device_type=device_type):
+                summary_ids = self._model.generate(
+                    **inputs,
+                    num_beams=4,
+                    min_length=min_length,
+                    max_length=max_length,
+                    length_penalty=2.0,
+                    early_stopping=True,
+                    no_repeat_ngram_size=3,
+                )
         decoded = self._tokenizer.decode(summary_ids[0], skip_special_tokens=True)
         return decoded.strip()
 
