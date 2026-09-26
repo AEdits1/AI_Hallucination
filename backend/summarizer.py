@@ -172,6 +172,7 @@ def normalize_input_text(text: str) -> str:
     cleaned = SPACE_PATTERN.sub(" ", text.strip())
     cleaned = FILLER_PATTERN.sub("", cleaned)
     cleaned = VOICE_COMMAND_PATTERN.sub("", cleaned)
+    cleaned = re.sub(r'Total Documents: \d+ Total Tokens: \d+ Vocabulary Size: \d+\.?', '', cleaned, flags=re.IGNORECASE)
     cleaned = SPACE_PATTERN.sub(" ", cleaned).strip()
 
     if not cleaned:

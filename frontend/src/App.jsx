@@ -12,6 +12,7 @@ import {
     Trash2,
     WandSparkles,
     X,
+    Info,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 
@@ -305,7 +306,24 @@ function App() {
             if (uploadedFile) {
                 formData.append("file", uploadedFile);
             }
-            const response = await fetch("/summarize", { method: "POST", body: formData });
+            const controller = new AbortController();
+            // PEGASUS/BART can take 60–120s on first load — give a 3-minute window
+            const timeoutId = setTimeout(() => controller.abort(), 180_000);
+            let response;
+            try {
+                response = await fetch("/summarize", {
+                    method: "POST",
+                    body: formData,
+                    signal: controller.signal,
+                });
+            } catch (fetchErr) {
+                if (fetchErr.name === "AbortError") {
+                    throw new Error("Request timed out. PEGASUS/BART may still be loading — please try again in a moment.");
+                }
+                throw new Error("Failed to reach the server. Make sure the Flask backend is running.");
+            } finally {
+                clearTimeout(timeoutId);
+            }
             const data = await response.json();
             if (!response.ok) {
                 throw new Error(data.error || "Unable to summarize this content.");
@@ -394,6 +412,8 @@ function App() {
                 />
 
                 <FeatureGrid />
+
+                <FaqSection />
             </main>
 
             <Footer />
@@ -450,10 +470,10 @@ function TopNav({ setHistoryOpen, mobileNavOpen, setMobileNavOpen }) {
             <div className="mx-auto flex w-full max-w-page items-center justify-between px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-ink">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-ink" aria-hidden="true">
                             <Sparkles size={14} className="text-on-primary" />
                         </div>
-                        <span className="text-body-sm font-medium text-ink">Summarizer & Verifier</span>
+                        <a href="/" className="text-body-sm font-medium text-ink no-underline" aria-label="AI Text Summarizer — Home">Summarizer &amp; Verifier</a>
                     </div>
                 </div>
 
@@ -597,7 +617,7 @@ function InputPanel(props) {
             >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-canvas-soft-2 text-ink">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-md bg-canvas-soft-2 text-ink" aria-hidden="true">
                             <FileUp size={18} />
                         </div>
                         <div>
@@ -824,12 +844,14 @@ function ResultsWindow(props) {
 
                             </div>
 
+                            <GuideBox />
+
                             <div className="grid min-h-0 flex-1 gap-5 overflow-hidden lg:grid-cols-[0.9fr_1.1fr]">
                                 <div className="scrollbar-thin flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
                                     <div className="rounded-md border border-hairline bg-link-bg-soft/40 px-5 py-4">
                                         <p className="caption-mono mb-2 text-link">What it&apos;s about</p>
                                         <p className="text-body-sm leading-6 text-ink">
-                                            {overview || "A clear one-line explanation of the text will appear here."}
+                                            {displayedSummary || "A clear explanation of the text will appear here."}
                                         </p>
                                     </div>
 
@@ -1138,12 +1160,16 @@ function Footer() {
             <div className="mx-auto max-w-page">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-ink">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-ink" aria-hidden="true">
                             <Sparkles size={12} className="text-on-primary" />
                         </div>
-                        <span className="text-body-sm text-mute">Summarizer & Verifier</span>
+                        <span className="text-body-sm text-mute">AI Text Summarizer &amp; Verifier</span>
                     </div>
-                    <p className="text-xs text-mute">© 2026 Text Summarization. All rights reserved.</p>
+                    <nav className="flex items-center gap-4 text-xs text-mute" aria-label="Footer navigation">
+                        <a href="/privacy" className="hover:text-ink transition-colors">Privacy Policy</a>
+                        <span aria-hidden="true">·</span>
+                        <span>&#169; {new Date().getFullYear()} All rights reserved.</span>
+                    </nav>
                 </div>
             </div>
         </footer>
@@ -1170,6 +1196,32 @@ function InsightCard({ icon, title, body }) {
         </div>
     );
 }
+
+function GuideBox() {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="mb-5 rounded-md border border-hairline bg-link-bg-soft/30">
+            <button type="button" onClick={() => setOpen(!open)} className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-ink hover:bg-canvas-soft transition-colors">
+                <span className="flex items-center gap-2"><Info size={16} className="text-link" /> How to read these results</span>
+                <span className="text-mute text-lg leading-none">{open ? "−" : "+"}</span>
+            </button>
+            <AnimatePresence>
+                {open && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                        <div className="border-t border-hairline px-4 py-4 text-xs text-body space-y-3">
+                            <p><strong className="text-ink">Summary Confidence:</strong> The model's internal confidence score regarding the overall quality and relevance of the summary.</p>
+                            <p><strong className="text-ink">Hallucination Ratio:</strong> The percentage of sentences in the summary that the AI suspects might be fabricated, contradicted, or unverifiable based on the source.</p>
+                            <p><strong className="text-ink">Supported / Contradicted Claims:</strong> Breakdown of individual statements. Supported claims are entailed by the text. Contradicted claims directly oppose the source text.</p>
+                            <p><strong className="text-ink">Top Keywords:</strong> The most significant technical terms and central topics extracted from your source document using TF-IDF.</p>
+                            <p><strong className="text-ink">Explainable XAI Breakdown:</strong> A sentence-by-sentence analysis of the summary, showing exact source evidence and similarity scores used to verify facts.</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
 // export default App;
 
 
@@ -1404,6 +1456,83 @@ function Score({ label, value }) {
                 {Math.round(value * 100)}%
             </div>
         </div>
+    );
+}
+
+/* ─────────────────────────── FAQ Section ─────────────────────────── */
+
+const FAQ_ITEMS = [
+    {
+        q: "Why does BART or PEGASUS take longer to load?",
+        a: "BART and PEGASUS are large transformer models (~1–2 GB each) that are downloaded on first use and cached locally. Subsequent runs are much faster. Extractive AI runs instantly.",
+    },
+    {
+        q: "What file formats are supported?",
+        a: "PDF, DOCX, PPTX, TXT, MD, CSV, JSON, HTML, XML, and most plain-text code or config files. Legacy .ppt files are not supported — please convert to .pptx first.",
+    },
+    {
+        q: "Are my documents stored or shared?",
+        a: "No. Text and files are processed entirely in memory and are never saved to disk or a database. Summary history lives only in your browser's localStorage and never leaves your device.",
+    },
+    {
+        q: "What is hallucination detection?",
+        a: "After summarization, a DeBERTa NLI (Natural Language Inference) model checks each sentence in the summary against the source text. Claims that are contradicted or unverifiable are flagged as potential hallucinations.",
+    },
+    {
+        q: "Which model should I use?",
+        a: "Use Extractive AI for speed and factual fidelity. Use BART for the best overall quality on English documents. Use PEGASUS for news-style or journalism content. All three produce different trade-offs — experiment to see what works best for your source material.",
+    },
+];
+
+function FaqSection() {
+    const [openIndex, setOpenIndex] = useState(null);
+
+    const toggle = (index) => {
+        setOpenIndex((prev) => (prev === index ? null : index));
+    };
+
+    return (
+        <section className="mb-16" aria-labelledby="faq-heading">
+            <div className="mb-8 text-center">
+                <p className="caption-mono mb-2">Support</p>
+                <h2 id="faq-heading" className="text-display-lg text-ink">Frequently asked questions.</h2>
+                <p className="mx-auto mt-4 max-w-xl text-body-md text-body">
+                    Common questions about using the summarizer and its models.
+                </p>
+            </div>
+
+            <div className="mx-auto max-w-2xl space-y-2">
+                {FAQ_ITEMS.map((item, index) => (
+                    <div key={index} className="rounded-lg border border-hairline bg-canvas overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => toggle(index)}
+                            aria-expanded={openIndex === index}
+                            className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left text-body-sm font-medium text-ink hover:bg-canvas-soft transition-colors"
+                        >
+                            <span>{item.q}</span>
+                            <span className="shrink-0 text-mute transition-transform" style={{ transform: openIndex === index ? "rotate(45deg)" : "rotate(0deg)" }}>
+                                +
+                            </span>
+                        </button>
+                        <AnimatePresence initial={false}>
+                            {openIndex === index && (
+                                <motion.div
+                                    key="content"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                                    className="overflow-hidden"
+                                >
+                                    <p className="px-5 pb-4 text-body-sm text-body">{item.a}</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                ))}
+            </div>
+        </section>
     );
 }
 

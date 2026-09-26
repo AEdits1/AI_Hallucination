@@ -71,6 +71,9 @@ class PegasusSummarizer:
                     no_repeat_ngram_size=3,
                 )
         decoded = self._tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+        # PEGASUS uses <n> as an inline newline token — replace with a space and normalise whitespace
+        decoded = decoded.replace("<n>", " ")
+        decoded = " ".join(decoded.split())
         return decoded.strip()
 
 
