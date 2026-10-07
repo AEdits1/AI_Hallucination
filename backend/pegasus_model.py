@@ -63,12 +63,11 @@ class PegasusSummarizer:
             with torch.autocast(device_type=device_type):
                 summary_ids = self._model.generate(
                     **inputs,
-                    num_beams=4,
+                    num_beams=6,
                     min_length=min_length,
                     max_length=max_length,
-                    length_penalty=0.9,
+                    length_penalty=1.5,
                     early_stopping=True,
-                    no_repeat_ngram_size=3,
                 )
         decoded = self._tokenizer.decode(summary_ids[0], skip_special_tokens=True)
         # PEGASUS uses <n> as an inline newline token — replace with a space and normalise whitespace

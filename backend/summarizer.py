@@ -213,101 +213,15 @@ def normalize_input_text(text: str) -> str:
     return normalized
 
 
-def sentence_similarity(sentence_a: str, sentence_b: str) -> float:
-    tokens_a = tokenize(sentence_a)
-    tokens_b = tokenize(sentence_b)
-
-    if not tokens_a or not tokens_b:
-        return 0.0
-
-    counts_a = Counter(tokens_a)
-    counts_b = Counter(tokens_b)
-
-    common_words = set(counts_a) & set(counts_b)
-    numerator = sum(counts_a[word] * counts_b[word] for word in common_words)
-
-    norm_a = math.sqrt(sum(value * value for value in counts_a.values()))
-    norm_b = math.sqrt(sum(value * value for value in counts_b.values()))
-
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-
-    return numerator / (norm_a * norm_b)
-
-
-def pagerank(matrix: List[List[float]], damping: float = 0.85, max_iterations: int = 50, tolerance: float = 1e-4) -> List[float]:
-    size = len(matrix)
-    if size == 0:
-        return []
-
-    scores = [1.0 / size] * size
-
-    for _ in range(max_iterations):
-        updated_scores = [(1.0 - damping) / size] * size
-
-        for source_index in range(size):
-            outbound_weight = sum(matrix[source_index])
-            if outbound_weight == 0:
-                share = damping * scores[source_index] / size
-                for target_index in range(size):
-                    updated_scores[target_index] += share
-                continue
-
-            for target_index in range(size):
-                weight = matrix[source_index][target_index]
-                if weight > 0:
-                    updated_scores[target_index] += damping * scores[source_index] * (weight / outbound_weight)
-
-        delta = sum(abs(updated_scores[index] - scores[index]) for index in range(size))
-        scores = updated_scores
-        if delta <= tolerance:
-            break
-
-    return scores
-
-
-def summarize_text(text: str, max_sentences: int = 3) -> str:
-    normalized_text = normalize_input_text(text)
-    sentences = split_sentences(normalized_text)
-    if not sentences:
-        return ""
-
-    if len(sentences) <= 2:
-        return " ".join(sentences)
-
-    max_sentences = max(1, min(max_sentences, len(sentences)))
-    similarity_matrix: List[List[float]] = []
-
-    for source_sentence in sentences:
-        row = []
-        for target_sentence in sentences:
-            if source_sentence == target_sentence:
-                row.append(0.0)
-            else:
-                row.append(sentence_similarity(source_sentence, target_sentence))
-        similarity_matrix.append(row)
-
-    ranked_scores = pagerank(similarity_matrix)
-    ranked_indices = sorted(
-        range(len(sentences)),
-        key=lambda index: ranked_scores[index],
-        reverse=True,
-    )[:max_sentences]
-
-    ordered_indices = sorted(ranked_indices)
-    return " ".join(sentences[index] for index in ordered_indices)
-
-
 def generate_overview(text: str) -> str:
     normalized_text = normalize_input_text(text)
     sentences = split_sentences(normalized_text)
     if not sentences:
         return ""
-
-    top_sentence = summarize_text(normalized_text, max_sentences=1).strip()
-
+    
+    top_sentence = sentences[0].strip()
     if top_sentence:
         top_sentence = top_sentence[0].upper() + top_sentence[1:]
         return top_sentence
 
-    return sentences[0]
+    return ""

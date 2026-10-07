@@ -18,9 +18,8 @@ import { jsPDF } from "jspdf";
 
 const SUMMARY_PRESETS = { short: 2, medium: 3, long: 5 };
 const MODEL_OPTIONS = {
-    extractive: "Extractive AI",
-    pegasus: "PEGASUS",
     bart: "BART",
+    pegasus: "PEGASUS",
 };
 const DEFAULT_PLACEHOLDER = "Paste or type your text here...";
 const DEFAULT_OUTPUT = "Your summary will appear here with highlighted key sentences and analytics.";
@@ -39,7 +38,7 @@ function App() {
     const [draftTranscript, setDraftTranscript] = useState("");
     const [uploadedFile, setUploadedFile] = useState(null);
     const [summaryPreset, setSummaryPreset] = useState("medium");
-    const [summaryModel, setSummaryModel] = useState("extractive");
+    const [summaryModel, setSummaryModel] = useState("bart");
     const [overview, setOverview] = useState("");
     const [summary, setSummary] = useState("");
     const [displayedSummary, setDisplayedSummary] = useState("");
@@ -283,7 +282,7 @@ function App() {
             item.hallucinationAnalysis || null
         );
         setSummaryPreset(item.preset);
-        setSummaryModel(item.model || "extractive");
+        setSummaryModel(item.model || "bart");
         setUploadedFile(null);
         setText(item.inputPreview);
         setHistoryOpen(false);
@@ -716,9 +715,9 @@ function InputPanel(props) {
 function FeatureGrid() {
     const features = [
         {
-            title: "Extractive AI.",
-            body: "TextRank-style sentence ranking picks the most important ideas from your source text.",
-            mono: "extractive",
+            title: "BART model.",
+            body: "State-of-the-art transformer model for high-quality abstractive summarization.",
+            mono: "bart",
         },
         {
             title: "PEGASUS model.",
@@ -1464,7 +1463,7 @@ function Score({ label, value }) {
 const FAQ_ITEMS = [
     {
         q: "Why does BART or PEGASUS take longer to load?",
-        a: "BART and PEGASUS are large transformer models (~1–2 GB each) that are downloaded on first use and cached locally. Subsequent runs are much faster. Extractive AI runs instantly.",
+        a: "BART and PEGASUS are large transformer models (~1–2 GB each) that are downloaded on first use and cached locally. Subsequent runs are much faster.",
     },
     {
         q: "What file formats are supported?",
@@ -1480,7 +1479,7 @@ const FAQ_ITEMS = [
     },
     {
         q: "Which model should I use?",
-        a: "Use Extractive AI for speed and factual fidelity. Use BART for the best overall quality on English documents. Use PEGASUS for news-style or journalism content. All three produce different trade-offs — experiment to see what works best for your source material.",
+        a: "Use BART for the best overall quality on English documents. Use PEGASUS for news-style or journalism content. Both produce different trade-offs — experiment to see what works best for your source material.",
     },
 ];
 
