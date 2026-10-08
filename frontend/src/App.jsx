@@ -15,6 +15,7 @@ import {
     Info,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
+import LatticeLoader from "./LatticeLoader";
 
 const SUMMARY_PRESETS = { short: 2, medium: 3, long: 5 };
 const MODEL_OPTIONS = {
@@ -295,6 +296,12 @@ function App() {
             return;
         }
         setLoading(true);
+        setResultsOpen(true);
+        setOverview("");
+        setSummary("");
+        setDisplayedSummary("");
+        setAnalysis(null);
+        setHallucinationAnalysis(null);
         setError("");
         setCopied(false);
         try {
@@ -796,8 +803,30 @@ function ResultsWindow(props) {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.96, y: 24 }}
                             transition={{ duration: 0.22, ease: "easeOut" }}
-                            className="flex max-h-[92vh] min-h-0 w-[min(1240px,96vw)] flex-col overflow-hidden rounded-lg bg-canvas p-4 shadow-elevation-5 sm:p-6"
+                            className="relative flex max-h-[92vh] min-h-0 w-[min(1240px,96vw)] flex-col overflow-hidden rounded-lg bg-canvas p-4 shadow-elevation-5 sm:p-6"
                         >
+                            <AnimatePresence>
+                                {(loading || hallucinationLoading) && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-md"
+                                    >
+                                        <LatticeLoader 
+                                            status="working" 
+                                            label={loading ? "Generating summary" : "Verifying facts against source"}
+                                            pattern="orbit"
+                                            grid={4}
+                                            shape="round"
+                                            color="#1e293b" 
+                                            cellSize={10} 
+                                            gap={4} 
+                                            fontSize={16}
+                                        />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                             <div className="mb-5 flex items-start justify-between gap-4">
                                 <div>
                                     <p className="caption-mono mb-2">Interactive Results</p>
@@ -904,20 +933,7 @@ function ResultsWindow(props) {
                                     </div>
 
                                     <div className="scrollbar-thin h-[calc(100%-32px)] min-h-[280px] overflow-y-auto pr-2 pb-8">
-                                        {loading || hallucinationLoading ? (
-                                            <div className="flex h-full flex-col items-center justify-center gap-4">
-                                                <motion.span
-                                                    animate={{ rotate: 360 }}
-                                                    transition={{ repeat: Infinity, duration: 2.4, ease: "linear" }}
-                                                    className="flex h-12 w-12 items-center justify-center rounded-full bg-ink text-on-primary"
-                                                >
-                                                    <Sparkles size={20} />
-                                                </motion.span>
-                                                <p className="text-body-sm text-mute">
-                                                    {hallucinationLoading ? "Verifying facts against source..." : "Generating summary..."}
-                                                </p>
-                                            </div>
-                                        ) : hallucinationAnalysis ? (
+                                        {hallucinationAnalysis ? (
                                             <div className="space-y-4 pt-2">
                                         
                                                 <div className="rounded-md border border-hairline bg-canvas-soft p-4">
