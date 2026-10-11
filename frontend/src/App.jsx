@@ -19,7 +19,7 @@ import LatticeLoader from "./LatticeLoader";
 
 const SUMMARY_PRESETS = { short: 2, medium: 3, long: 5 };
 const MODEL_OPTIONS = {
-    bart: "BART",
+    led: "LED",
     pegasus: "PEGASUS",
 };
 const DEFAULT_PLACEHOLDER = "Paste or type your text here...";
@@ -39,7 +39,7 @@ function App() {
     const [draftTranscript, setDraftTranscript] = useState("");
     const [uploadedFile, setUploadedFile] = useState(null);
     const [summaryPreset, setSummaryPreset] = useState("medium");
-    const [summaryModel, setSummaryModel] = useState("bart");
+    const [summaryModel, setSummaryModel] = useState("led");
     const [overview, setOverview] = useState("");
     const [summary, setSummary] = useState("");
     const [displayedSummary, setDisplayedSummary] = useState("");
@@ -283,7 +283,7 @@ function App() {
             item.hallucinationAnalysis || null
         );
         setSummaryPreset(item.preset);
-        setSummaryModel(item.model || "bart");
+        setSummaryModel(item.model || "led");
         setUploadedFile(null);
         setText(item.inputPreview);
         setHistoryOpen(false);
@@ -307,13 +307,14 @@ function App() {
         try {
             const formData = new FormData();
             formData.append("text", text);
+            formData.append("summary_preset", summaryPreset);
             formData.append("summary_length", String(SUMMARY_PRESETS[summaryPreset]));
             formData.append("model_type", summaryModel);
             if (uploadedFile) {
                 formData.append("file", uploadedFile);
             }
             const controller = new AbortController();
-            // PEGASUS/BART can take 60–120s on first load — give a 3-minute window
+            // LED/PEGASUS can take 60–120s on first load — give a 3-minute window
             const timeoutId = setTimeout(() => controller.abort(), 180_000);
             let response;
             try {
@@ -324,7 +325,7 @@ function App() {
                 });
             } catch (fetchErr) {
                 if (fetchErr.name === "AbortError") {
-                    throw new Error("Request timed out. PEGASUS/BART may still be loading — please try again in a moment.");
+                    throw new Error("Request timed out. LED/PEGASUS may still be loading — please try again in a moment.");
                 }
                 throw new Error("Failed to reach the server. Make sure the Flask backend is running.");
             } finally {
@@ -659,7 +660,12 @@ function InputPanel(props) {
 
             <div className="mb-6 flex flex-col gap-4">
                 <div>
-                    <p className="caption-mono mb-2">Summary Length</p>
+                    <div className="mb-2 flex items-center justify-between">
+                        <p className="caption-mono">Summary Length & Compression</p>
+                        <span className="caption-mono text-xs text-mute">
+                            {summaryPreset === "short" ? "Strict ≤ 45% words" : summaryPreset === "medium" ? "Strict ≤ 60% words" : "Strict 75–80% words"}
+                        </span>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                         {Object.keys(SUMMARY_PRESETS).map((preset) => (
                             <button
@@ -668,7 +674,10 @@ function InputPanel(props) {
                                 onClick={() => setSummaryPreset(preset)}
                                 className={summaryPreset === preset ? "tab-ghost-active" : "tab-ghost"}
                             >
-                                {preset.charAt(0).toUpperCase() + preset.slice(1)}
+                                <span>{preset.charAt(0).toUpperCase() + preset.slice(1)}</span>
+                                <span className="ml-1 text-[11px] opacity-75">
+                                    {preset === "short" ? "(≤45%)" : preset === "medium" ? "(≤60%)" : "(75-80%)"}
+                                </span>
                             </button>
                         ))}
                     </div>
@@ -722,9 +731,9 @@ function InputPanel(props) {
 function FeatureGrid() {
     const features = [
         {
-            title: "BART model.",
-            body: "State-of-the-art transformer model for high-quality abstractive summarization.",
-            mono: "bart",
+            title: "LED model.",
+            body: "Longformer Encoder-Decoder with 16k context window for long-document summarization in one go.",
+            mono: "led",
         },
         {
             title: "PEGASUS model.",
@@ -896,9 +905,13 @@ function ResultsWindow(props) {
                                                 }
                                             />
                                             <InsightCard
-                                                icon={<History size={16} />}
-                                                title="Source File"
-                                                body={uploadedFile?.name || "Manual text input"}
+                                                icon={<Sparkles size={16} />}
+                                                title="Summary Stats"
+                                                body={
+                                                    analysis
+                                                        ? `${analysis.summary_word_count} words, ${analysis.summary_sentence_count} sentences (${analysis.compression_ratio}% of source)`
+                                                        : "No analytics yet."
+                                                }
                                             />
                                             <InsightCard
                                                 icon={<WandSparkles size={16} />}
@@ -1478,8 +1491,8 @@ function Score({ label, value }) {
 
 const FAQ_ITEMS = [
     {
-        q: "Why does BART or PEGASUS take longer to load?",
-        a: "BART and PEGASUS are large transformer models (~1–2 GB each) that are downloaded on first use and cached locally. Subsequent runs are much faster.",
+        q: "Why does LED or PEGASUS take longer to load?",
+        a: "LED and PEGASUS are transformer models that are downloaded on first use and cached locally. Subsequent runs are much faster.",
     },
     {
         q: "What file formats are supported?",
@@ -1495,7 +1508,7 @@ const FAQ_ITEMS = [
     },
     {
         q: "Which model should I use?",
-        a: "Use BART for the best overall quality on English documents. Use PEGASUS for news-style or journalism content. Both produce different trade-offs — experiment to see what works best for your source material.",
+        a: "Use LED for long documents up to 16,384 tokens in one go. Use PEGASUS for news-style or journalism content. Both produce different trade-offs — experiment to see what works best for your source material.",
     },
 ];
 

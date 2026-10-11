@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — Page Not Found | AI Text Summarizer</title>
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: #fafafa;
+            color: #111;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 3rem 2.5rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        }
+        .code {
+            font-size: 5rem;
+            font-weight: 700;
+            color: #111;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+        .dot { color: #6366f1; }
+        h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+        p  { color: #6b7280; font-size: 0.9rem; line-height: 1.6; margin-bottom: 2rem; }
+        a.btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #111;
+            color: #fff;
+            text-decoration: none;
+            padding: 0.65rem 1.4rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.15s;
+        }
+        a.btn:hover { background: #374151; }
+        .mono {
+            display: inline-block;
+            font-family: monospace;
+            font-size: 0.75rem;
+            background: #f3f4f6;
+            color: #6b7280;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="code">4<span class="dot">0</span>4</div>
+        <h1>Page not found</h1>
+        <p>The page you're looking for doesn't exist or has been moved. Head back to the summarizer and try again.</p>
+        <a href="/" class="btn">&#8592; Go to Summarizer</a>
+        <div class="mono">error_code: 404 | path: {{ request.path }}</div>
+    </div>
+</body>
+</html>

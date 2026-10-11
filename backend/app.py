@@ -7,14 +7,14 @@ from flask import Flask, jsonify, render_template, request
 import time
 try:
     from backend.analysis import analyze_text
-    from backend.bart_model import BART_SUMMARIZER
+    from backend.led_model import LED_SUMMARIZER
     from backend.file_utils import extract_text_from_upload
     from backend.pegasus_model import PEGASUS_SUMMARIZER
     from backend.summarizer import generate_overview, normalize_input_text
     from backend.supervised_model import load_supervised_summarizer
 except ModuleNotFoundError:
     from analysis import analyze_text
-    from bart_model import BART_SUMMARIZER
+    from led_model import LED_SUMMARIZER
     from file_utils import extract_text_from_upload
     from pegasus_model import PEGASUS_SUMMARIZER
     from summarizer import generate_overview, normalize_input_text
@@ -55,12 +55,14 @@ def summarize():
     if is_form_request:
         text = (request.form.get("text") or "").strip()
         summary_length = request.form.get("summary_length", 3)
-        model_type = (request.form.get("model_type") or "bart").strip().lower()
+        summary_preset = request.form.get("summary_preset")
+        model_type = (request.form.get("model_type") or "led").strip().lower()
     else:
         payload = request.get_json(silent=True) or {}
         text = (payload.get("text") or "").strip()
         summary_length = payload.get("summary_length", 3)
-        model_type = (payload.get("model_type") or "bart").strip().lower()
+        summary_preset = payload.get("summary_preset")
+        model_type = (payload.get("model_type") or "led").strip().lower()
 
     file_name = None
 
@@ -81,24 +83,24 @@ def summarize():
     try:
         summary_length = int(summary_length)
     except (TypeError, ValueError):
-        return jsonify({"error": "Summary length must be a valid number."}), 400
+        summary_length = 3
 
     if summary_length < 1 or summary_length > 10:
-        return jsonify({"error": "Summary length must be between 1 and 10 sentences."}), 400
+        summary_length = 3
 
     try:
         if model_type == "pegasus":
-            summary = PEGASUS_SUMMARIZER.summarize(text, summary_length=summary_length)
+            summary = PEGASUS_SUMMARIZER.summarize(text, summary_length=summary_length, preset=summary_preset)
         else:
-            model_type = "bart"
-            summary = BART_SUMMARIZER.summarize(text, summary_length=summary_length)
+            model_type = "led"
+            summary = LED_SUMMARIZER.summarize(text, summary_length=summary_length, preset=summary_preset)
     except RuntimeError as error:
         return jsonify({"error": str(error)}), 400
     except Exception as error:
         if model_type == "pegasus":
             label = "PEGASUS"
-        elif model_type == "bart":
-            label = "BART"
+        elif model_type == "led":
+            label = "LED"
         else:
             label = "summarization"
         return jsonify({"error": f"{label} failed: {error}"}), 500
