@@ -198,6 +198,61 @@ Performs sentence-level Natural Language Inference verification on the generated
 
 ---
 
+## Quantitative Evaluation & Benchmark Results
+
+Comprehensive evaluation executed across the full dataset (**20,000 samples**, 10,000 paired instances) on an **NVIDIA GeForce RTX 5060 Ti** GPU.
+
+### 1. Hallucination Detection Benchmark (Full 20,000 Samples)
+
+Evaluated using the fine-tuned DeBERTa classifier (`trained_model/`):
+
+| Evaluation Metric | Value | Detail |
+| :--- | :---: | :--- |
+| **Accuracy** | **93.32%** | $18,664 / 20,000$ correct classifications |
+| **Macro Precision** | **93.88%** | Balanced precision across classes |
+| **Macro Recall** | **93.32%** | Balanced recall across classes |
+| **Macro F1-Score** | **93.30%** | Harmonic mean of precision and recall |
+| **Hallucination Detection Precision (Class 0)** | **98.84%** | Near-zero false alarms for hallucination |
+| **Factual Retention Recall (Class 1)** | **98.97%** | Retains almost all authentic ground-truth text |
+| **Inference Throughput** | **49.28 samples/sec** | Batch Size 32, max sequence length 512 |
+| **Average Latency** | **20.29 ms / sample** | Real-time classification speed |
+
+#### Confusion Matrix (20,000 Samples)
+```
+                          PREDICTED: Hallucinated (0)    PREDICTED: Factual (1)
+ACTUAL: Hallucinated (0)            8,767 (TN)                    1,233 (FP)
+ACTUAL: Factual (1)                   103 (FN)                    9,897 (TP)
+```
+
+---
+
+### 2. Full Dataset Summarization & Grounding Analysis
+
+| Corpus Property / Metric | Factual Reference (Gold) | Hallucinated Counterpart | Grounding Delta ($\Delta$) |
+| :--- | :---: | :---: | :---: |
+| **Mean Word Count** | 52.1 ± 22.3 words | 72.9 ± 27.1 words | — |
+| **Compression Ratio** | 9.61% of source text | 13.10% of source text | — |
+| **ROUGE-1 Grounding Precision** | **87.43%** | 80.56% | **+6.87%** |
+| **ROUGE-2 Grounding Precision** | **49.32%** | 38.78% | **+10.54%** |
+| **ROUGE-L Grounding Precision** | **64.10%** | 53.91% | **+10.19%** |
+| **Novel Unigrams (% vocabulary not in source)** | 12.19% | 18.70% | $+6.51\%$ ungrounded words |
+| **Novel Bigrams (% pairs not in source)** | 50.48% | 60.87% | $+10.39\%$ ungrounded bigrams |
+| **Extractive Fragment Coverage** | **87.81%** | 81.30% | $+6.51\%$ higher source anchoring |
+| **Extractive Fragment Density** | **3.84** | 2.60 | $+47.7\%$ longer verbatim chains |
+
+---
+
+### 3. Model Generation Benchmark (PEGASUS vs. LED)
+
+| Model Architecture | Base Checkpoint | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | Mean Words | Latency / Sample |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **PEGASUS** | `google/pegasus-cnn_dailymail` | **33.19%** | **17.53%** | **21.84%** | 216.4 | 5.81 s |
+| **LED** | `pszemraj/led-base-book-summary` | **21.81%** | **4.47%** | **11.05%** | 279.7 | **3.04 s** |
+
+*All structured evaluation data is archived in `evaluation_results_master.json`.*
+
+---
+
 ## License
 
 This project is licensed under the MIT License.

@@ -50,3 +50,10 @@ desktop.ini
 
 # anchor.md context folder
 anchor.md/
+
+# Large model checkpoints and datasets
+trained_model/
+*.csv
+HaluEval/
+strix_runs/
+Manual train_test/

@@ -1,0 +1,136 @@
+{
+  "project_title": "Explainable Abstractive Summarization with Hallucination Detection using Transformer Models",
+  "dataset": {
+    "file": "hallucination_dataset_full.csv",
+    "total_samples": 20000,
+    "factual_samples": 10000,
+    "hallucinated_samples": 10000,
+    "task": "Document Grounding, Abstractive Summarization, and NLI Hallucination Classification"
+  },
+  "hallucination_detection_metrics": {
+    "model": "trained_model (Fine-tuned DeBERTa-v2)",
+    "hardware": "NVIDIA GeForce RTX 5060 Ti (16 GB VRAM)",
+    "dataset_size_evaluated": 20000,
+    "batch_size": 32,
+    "max_seq_length": 512,
+    "accuracy": 0.9332,
+    "macro_precision": 0.9388,
+    "macro_recall": 0.9332,
+    "macro_f1": 0.9330,
+    "weighted_precision": 0.9388,
+    "weighted_recall": 0.9332,
+    "weighted_f1": 0.9330,
+    "confusion_matrix": {
+      "true_negative_hallucination": 8767,
+      "false_positive": 1233,
+      "false_negative": 103,
+      "true_positive_factual": 9897
+    },
+    "classification_report": {
+      "hallucinated_class_0": {
+        "precision": 0.9884,
+        "recall": 0.8767,
+        "f1_score": 0.9292,
+        "support": 10000
+      },
+      "factual_class_1": {
+        "precision": 0.8892,
+        "recall": 0.9897,
+        "f1_score": 0.9368,
+        "support": 10000
+      }
+    },
+    "inference_performance": {
+      "wall_clock_time_seconds": 405.85,
+      "gpu_kernel_time_seconds": 405.84,
+      "throughput_samples_per_second": 49.28,
+      "latency_ms_per_sample": 20.29
+    }
+  },
+  "summarization_corpus_metrics": {
+    "total_pairs": 10000,
+    "source_article_length": {
+      "mean_words": 680.77,
+      "median_words": 610.0,
+      "std_words": 351.84,
+      "min_words": 56,
+      "max_words": 1936
+    },
+    "factual_summary_length": {
+      "mean_words": 52.13,
+      "median_words": 49.0,
+      "std_words": 22.33,
+      "min_words": 8,
+      "max_words": 524
+    },
+    "hallucinated_summary_length": {
+      "mean_words": 72.90,
+      "median_words": 73.0,
+      "std_words": 27.07,
+      "min_words": 11,
+      "max_words": 235
+    },
+    "compression_ratios": {
+      "factual_mean_pct": 9.61,
+      "factual_std_pct": 10.36,
+      "hallucinated_mean_pct": 13.10,
+      "hallucinated_std_pct": 7.67
+    },
+    "grounding_rouge_against_source": {
+      "factual": {
+        "rouge_1": {"precision": 0.8743, "recall": 0.0825, "f1": 0.1469},
+        "rouge_2": {"precision": 0.4932, "recall": 0.0468, "f1": 0.0833},
+        "rouge_l": {"precision": 0.6410, "recall": 0.0601, "f1": 0.1071}
+      },
+      "hallucinated": {
+        "rouge_1": {"precision": 0.8056, "recall": 0.1036, "f1": 0.1785},
+        "rouge_2": {"precision": 0.3878, "recall": 0.0497, "f1": 0.0857},
+        "rouge_l": {"precision": 0.5391, "recall": 0.0683, "f1": 0.1179}
+      },
+      "precision_delta_factual_vs_hallucinated": {
+        "rouge_1_precision_gain": "+6.87%",
+        "rouge_2_precision_gain": "+10.54%",
+        "rouge_l_precision_gain": "+10.19%"
+      }
+    },
+    "abstractiveness_and_novelty": {
+      "factual": {
+        "novel_unigram_pct": 12.19,
+        "novel_bigram_pct": 50.48,
+        "novel_trigram_pct": 70.69,
+        "extractive_fragment_coverage_pct": 87.81,
+        "extractive_fragment_density": 3.84
+      },
+      "hallucinated": {
+        "novel_unigram_pct": 18.70,
+        "novel_bigram_pct": 60.87,
+        "novel_trigram_pct": 80.15,
+        "extractive_fragment_coverage_pct": 81.30,
+        "extractive_fragment_density": 2.60
+      }
+    },
+    "cross_summary_semantic_agreement": {
+      "rouge_1_f1": 0.3729,
+      "rouge_2_f1": 0.1396,
+      "rouge_l_f1": 0.2397
+    }
+  },
+  "generative_model_benchmark": {
+    "pegasus_cnn_dailymail": {
+      "rouge_1_f1": 0.3319,
+      "rouge_2_f1": 0.1753,
+      "rouge_l_f1": 0.2184,
+      "avg_words": 216.4,
+      "avg_latency_sec": 5.81,
+      "throughput_samples_per_sec": 0.17
+    },
+    "led_book_summary": {
+      "rouge_1_f1": 0.2181,
+      "rouge_2_f1": 0.0447,
+      "rouge_l_f1": 0.1105,
+      "avg_words": 279.7,
+      "avg_latency_sec": 3.04,
+      "throughput_samples_per_sec": 0.33
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+    "PEGASUS (google/pegasus-cnn_dailymail)": {
+        "rouge_1_f1": 0.33189502593352244,
+        "rouge_2_f1": 0.1753454253780661,
+        "rouge_l_f1": 0.21836509163016365,
+        "avg_word_count": 216.4,
+        "avg_latency_sec": 5.806305273333297,
+        "throughput_samples_sec": 0.1722265628355289
+    },
+    "LED (pszemraj/led-base-book-summary)": {
+        "rouge_1_f1": 0.21807902192735446,
+        "rouge_2_f1": 0.044703979505471274,
+        "rouge_l_f1": 0.11052165502410986,
+        "avg_word_count": 279.73333333333335,
+        "avg_latency_sec": 3.0424217533333833,
+        "throughput_samples_sec": 0.32868552787080396
+    }
+}

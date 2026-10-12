@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1685.5851666666663 681.9000000000001" width="1685.5851666666663" height="681.9000000000001" style="--bg:#1F1F1F;--fg:#CCCCCC;--line:#CCCCCC;--accent:#0078D4;--muted:#CCCCCCCC;--surface:#181818;--border:#CCCCCC;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<g class="subgraph" data-id="Client" data-label="Frontend (React + Vite + Tailwind CSS)">
+  <rect x="104.13299999999998" y="208.9" width="897.7929999999999" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="104.13299999999998" y="208.9" width="897.7929999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="116.13299999999998" y="222.9" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Frontend (React + Vite + Tailwind CSS)</text>
+</g>
+<g class="subgraph" data-id="Server" data-label="Backend (Python / Flask API)">
+  <rect x="50.04000000000002" y="434.1" width="662.9704999999999" height="181.8" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="50.04000000000002" y="434.1" width="662.9704999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="62.04000000000002" y="448.1" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">Backend (Python / Flask API)</text>
+</g>
+<g class="subgraph" data-id="AI_Engine" data-label="AI / NLP Pipeline">
+  <rect x="752.2381666666666" y="52" width="893.3469999999999" height="96.9" rx="0" ry="0" fill="var(--_group-fill)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <rect x="752.2381666666666" y="52" width="893.3469999999999" height="28" rx="0" ry="0" fill="var(--_group-hdr)" stroke="var(--_node-stroke)" stroke-width="1" />
+  <text x="764.2381666666666" y="66" font-size="12" font-weight="600" fill="var(--_text-sec)" dy="4.199999999999999">AI / NLP Pipeline</text>
+</g>
+<polyline class="edge" data-from="UI" data-to="Router" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="Upload Document / Text" points="244.84799999999996,289.8 244.84799999999996,478.1" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Parser" data-to="AI_Engine" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="244.84799999999996,599.9000000000001 244.84799999999996,633.9000000000001 40.04000000000002,633.9000000000001 40.04000000000002,40 885.5466666666666,40 885.5466666666666,52" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="AI_Engine" data-to="Extractive" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="421.1089999999999,0 421.1089999999999,44" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="AI_Engine" data-to="Abstractive" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="724.4739999999998,0 724.4739999999998,44" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="AI_Engine" data-to="HallucinationEngine" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="143.30849999999998,0 143.30849999999998,44" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="AI_Engine" data-to="Analytics" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="905.5466666666666,148.9 905.5466666666666,178.9 1024.926,178.9 1024.926,416.1 573.4069999999999,416.1 573.4069999999999,478.1" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Analytics" data-to="Display" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="573.4069999999999,515 573.4069999999999,633.9000000000001 1011.9259999999997,633.9000000000001 1011.9259999999997,190.89999999999998 881.0466666666664,190.89999999999998 881.0466666666666,252.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="HallucinationEngine" data-to="Display" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="895.5466666666666,132.9 895.5466666666666,178.9 776.1673333333332,178.9 776.1673333333332,252.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Router" data-to="Parser" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="244.84799999999996,515 244.84799999999996,563" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="UI" data-to="Router" data-label="Upload Document / Text">
+  <rect x="181.34799999999996" y="354.8" width="126.946" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="244.82099999999997" y="369.95" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">Upload Document / Text</text>
+</g>
+<g class="node" data-id="UI" data-label="Modern UI / File Upload / Voice Input" data-shape="rectangle">
+  <rect x="120.13299999999998" y="252.9" width="249.42999999999998" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="244.84799999999996" y="271.35" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Modern UI / File Upload / Voice Input</text>
+</g>
+<g class="node" data-id="Display" data-label="Summary, Analytics &amp; Hallucination Breakdown" data-shape="rectangle">
+  <rect x="671.288" y="252.9" width="314.638" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="828.607" y="271.35" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Summary, Analytics &amp; Hallucination Breakdown</text>
+</g>
+<g class="node" data-id="Export" data-label="PDF Export / LocalStorage History" data-shape="rectangle">
+  <rect x="397.56299999999993" y="252.9" width="245.72499999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="520.4254999999999" y="271.35" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">PDF Export / LocalStorage History</text>
+</g>
+<g class="node" data-id="Parser" data-label="Document Parser (PyPDF2, python-docx, python-pptx)" data-shape="rectangle">
+  <rect x="66.04000000000002" y="563" width="357.6159999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="244.84799999999996" y="581.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Document Parser (PyPDF2, python-docx, python-pptx)</text>
+</g>
+<g class="node" data-id="Router" data-label="REST Endpoints (/summarize, /analyze_hallucination)" data-shape="rectangle">
+  <rect x="67.8925" y="478.1" width="353.9109999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="244.84799999999996" y="496.55" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">REST Endpoints (/summarize, /analyze_hallucination)</text>
+</g>
+<g class="node" data-id="Analytics" data-label="Text Analytics Engine (analysis.py)" data-shape="rectangle">
+  <rect x="449.80349999999993" y="478.1" width="247.20699999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="573.4069999999999" y="496.55" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">Text Analytics Engine (analysis.py)</text>
+</g>
+<g class="node" data-id="Extractive" data-label="TextRank / Supervised SGD Model" data-shape="rectangle">
+  <rect x="1050.8551666666667" y="96" width="244.98399999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1173.3471666666667" y="114.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">TextRank / Supervised SGD Model</text>
+</g>
+<g class="node" data-id="Abstractive" data-label="PEGASUS &amp; BART (PyTorch / Transformers)" data-shape="rectangle">
+  <rect x="1323.8391666666666" y="96" width="305.746" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="1476.7121666666667" y="114.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">PEGASUS &amp; BART (PyTorch / Transformers)</text>
+</g>
+<g class="node" data-id="HallucinationEngine" data-label="NLI DeBERTa-v3 + MiniLM Retrieval" data-shape="rectangle">
+  <rect x="768.2381666666666" y="96" width="254.61699999999996" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="895.5466666666666" y="114.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">NLI DeBERTa-v3 + MiniLM Retrieval</text>
+</g>
+</svg>
